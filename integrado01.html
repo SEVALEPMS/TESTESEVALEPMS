@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Sistema de Senhas · Santos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin:0;
+      font-family:'Montserrat', sans-serif;
+      background:#f5f5f5;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      min-height:100vh;
+      padding:40px 0;
+    }
+    .container {
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      width:100%;
+      max-width:520px;
+      text-align:center;
+      padding:30px;
+    }
+    h1 { color:#25431d; margin-bottom:5px; font-weight:600; }
+    h2 { color:#333; margin-bottom:20px; font-weight:600; }
+    button, select, input[type="text"] {
+      font-size:18px;
+      padding:12px 24px;
+      margin:8px 4px;
+      border:none;
+      border-radius:6px;
+      font-family:'Montserrat', sans-serif;
+      transition: background 0.2s;
+      cursor:pointer;
+    }
+    button.primary { background:#25431d; color:#fff; }
+    button.primary:hover { background:#1f3f21; }
+    button.secondary { background:#70bd54; color:#fff; }
+    button.secondary:hover { background:#5aa948; }
+    select, input[type="text"] {
+      padding:10px;
+      border:2px solid #25431d;
+      border-radius:6px;
+      color:#25431d;
+      background:#fafafa;
+      font-size:16px; 
+      width: calc(100% - 24px); 
+      box-sizing: border-box; 
+    }
+    .hidden { display:none; }
+    .painel { margin-top:30px; }
+    #senha-gerada, #senha-chamada { font-size:56px; font-weight:600; color:#25431d; margin:24px 0; }
+    #fila-espera { text-align:left; margin-top:20px; color:#444; }
+    ul { padding-left:20px; }
+
+    /* Estilos para Checkboxes */
+    .checkbox-group {
+      text-align: left;
+      margin: 15px 0;
+      padding: 0 10px;
+    }
+    .checkbox-group label {
+      display: block; 
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: #333;
+    }
+    .checkbox-group input[type="checkbox"] {
+      margin-right: 10px;
+      transform: scale(1.2); 
+      cursor: pointer;
+    }
+
+    /* Estilos para lista de atendentes */
+    .atendente-lista-btn {
+      width: 100%;
+      text-align: left;
+      margin-bottom: 10px;
+      font-size: 20px;
+      background: #70bd54;
+      color: #fff;
+    }
+    .atendente-lista-btn:hover {
+      background: #5aa948;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Prefeitura de Santos</h1>
+    <h2>Sistema de Senhas</h2>
+
+    <div id="seletor-modo">
+      <p>Escolha o modo:</p>
+      <button class="primary" onclick="entrarComo('cliente')">Cliente</button>
+      <button class="secondary" onclick="mostrarTelaEscolhaAtendente()">Atendente</button> <button class="primary" id="btn-cadastro-atendente">Cadastrar Atendente</button>
+    </div>
+
+    <div id="tela-cliente" class="hidden painel">
+      <h2>Gerar Senha</h2>
+      <select id="letra-cliente">
+        <option value="A">SEVALE</option>
+        <option value="B">SIAM</option>
+        <option value="C">SECONV</option>
+      </select><br>
+      <button class="primary" onclick="gerarSenha()">Gerar Senha</button>
+      <div id="senha-gerada">Sua senha aparecerá aqui</div>
+      <button class="secondary" onclick="voltar()">← Voltar</button>
+    </div>
+
+    <div id="tela-escolha-setor-atendente" class="hidden painel">
+      <h2>Selecione o Setor de Atendimento</h2>
+      <button class="primary" onclick="mostrarListaAtendentes('A', 'SEVALE')">SEVALE</button>
+      <button class="primary" onclick="mostrarListaAtendentes('B', 'SIAM')">SIAM</button>
+      <button class="primary" onclick="mostrarListaAtendentes('C', 'SECONV')">SECONV</button><br>
+      <button class="secondary" onclick="voltar()">← Voltar</button>
+    </div>
+
+    <div id="tela-lista-atendentes-setor" class="hidden painel">
+        <h2 id="titulo-lista-atendentes"></h2>
+        <div id="lista-atendentes-container">
+            </div>
+        <button class="secondary" onclick="voltarParaSelecaoSetor()">← Voltar</button>
+    </div>
+
+    <div id="tela-atendente" class="hidden painel">
+      <h2 id="titulo-atendente">Atendente</h2>
+      <button class="primary" onclick="chamarProxima()">Chamar Próxima</button>
+      <div id="senha-chamada">Aguardando chamada</div>
+      <div id="fila-espera"></div>
+      <button class="secondary" onclick="voltar()">← Voltar</button>
+    </div>
+
+    <div id="tela-cadastro-atendente" class="hidden painel">
+        <h2>Cadastrar Novo Atendente</h2>
+        <p>Nome do Atendente:</p>
+        <input type="text" id="nome-cadastro-atendente" placeholder="Nome Completo">
+        
+        <div class="checkbox-group">
+            <p>Tipos de Senha que o atendente pode atender:</p>
+            <label><input type="checkbox" name="tipoSenha" value="A"> SEVALE (Senha A)</label>
+            <label><input type="checkbox" name="tipoSenha" value="B"> SIAM (Senha B)</label>
+            <label><input type="checkbox" name="tipoSenha" value="C"> SECONV (Senha C)</label>
+        </div>
+        
+        <button class="primary" onclick="cadastrarAtendente()">Cadastrar</button><br>
+        <button class="secondary" onclick="voltarParaTelaInicial()">← Voltar</button>
+    </div>
+
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyCb5WQz-R4TLlaPtag0-T4WVgoOG3AxBDE",
+      authDomain: "senhas-1fd17.firebaseapp.com",
+      databaseURL: "https://senhas-1fd17-default-rtdb.firebaseio.com",
+      projectId: "senhas-1fd17",
+      storageBucket: "senhas-1fd17.appspot.com",
+      messagingSenderId: "403214666788",
+      appId: "1:403214666788:web:352e04b7bf9252a19a9cb1",
+      measurementId: "G-69CK7CV4X6"
+    };
+
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Referências às coleções no Firestore
+    const senhasCollection = db.collection('senhas');
+    const contadorCollection = db.collection('contadores');
+    const atendentesCollection = db.collection('atendentes'); 
+
+    let fila = [];
+    let tipoAtendenteSelecionado = null; 
+    let nomeSetorSelecionado = null; // Renomeado de nomeAtendenteSelecionado para clareza
+    let atendenteAtivoId = null; // ID do documento do atendente no Firestore
+    let atendenteAtivoNome = null; // Nome do atendente selecionado
+    let unsubscribeFila = null; 
+
+    // Mapeamento para exibir os nomes completos dos tipos de senha
+    const tipoSenhaNomes = {
+        'A': 'SEVALE',
+        'B': 'SIAM',
+        'C': 'SECONV'
+    };
+
+    // --- Funções de UI ---
+
+    function esconderTodasTelas() {
+        ['tela-cliente', 'tela-escolha-setor-atendente', 'tela-lista-atendentes-setor', 
+         'tela-atendente', 'tela-cadastro-atendente', 'seletor-modo'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+    }
+
+    function entrarComo(modo){
+      esconderTodasTelas();
+      if(modo==='cliente') document.getElementById('tela-cliente').classList.remove('hidden');
+    }
+
+    // ALTERADO: Agora mostra a tela de escolha de setor para atendente
+    function mostrarTelaEscolhaAtendente(){
+      esconderTodasTelas();
+      document.getElementById('tela-escolha-setor-atendente').classList.remove('hidden');
+    }
+
+    // NOVA FUNÇÃO: Exibe a lista de atendentes para o setor selecionado
+    async function mostrarListaAtendentes(tipo, nomeSetor){
+        tipoAtendenteSelecionado = tipo;
+        nomeSetorSelecionado = nomeSetor;
+        esconderTodasTelas();
+        document.getElementById('tela-lista-atendentes-setor').classList.remove('hidden');
+        document.getElementById('titulo-lista-atendentes').textContent = `Atendentes do Setor ${nomeSetor}`;
+        
+        const listaContainer = document.getElementById('lista-atendentes-container');
+        listaContainer.innerHTML = 'Carregando atendentes...';
+
+        try {
+            const snapshot = await atendentesCollection
+                .where('tiposSenhas', 'array-contains', tipo) // Busca atendentes que atendem a este tipo de senha
+                .orderBy('nome', 'asc')
+                .get();
+
+            listaContainer.innerHTML = ''; // Limpa o "Carregando..."
+            if (snapshot.empty) {
+                listaContainer.innerHTML = '<p>Nenhum atendente cadastrado para este setor.</p>';
+            } else {
+                snapshot.forEach(doc => {
+                    const atendente = doc.data();
+                    const button = document.createElement('button');
+                    button.classList.add('primary', 'atendente-lista-btn');
+                    button.textContent = atendente.nome;
+                    // Ao clicar, chame a função para iniciar o atendimento com o ID do atendente
+                    button.onclick = () => iniciarAtendimentoComAtendente(doc.id, atendente.nome);
+                    listaContainer.appendChild(button);
+                });
+            }
+        } catch (error) {
+            console.error("Erro ao carregar atendentes: ", error);
+            listaContainer.innerHTML = '<p>Erro ao carregar atendentes. Tente novamente.</p>';
+            alert("Erro ao carregar a lista de atendentes. Verifique sua conexão ou as regras do Firestore.");
+        }
+    }
+
+    // NOVA FUNÇÃO: Inicia o atendimento após a seleção do atendente
+    async function iniciarAtendimentoComAtendente(idAtendente, nomeAtendente){
+        atendenteAtivoId = idAtendente;
+        atendenteAtivoNome = nomeAtendente; // Armazena o nome para exibição
+        
+        esconderTodasTelas();
+        document.getElementById('tela-atendente').classList.remove('hidden');
+        
+        document.getElementById('titulo-atendente').textContent = `${nomeSetorSelecionado} - ${atendenteAtivoNome}`;
+        
+        if (unsubscribeFila) {
+            unsubscribeFila();
+        }
+        
+        // Listener da fila continua o mesmo
+        unsubscribeFila = senhasCollection
+          .where('tipo', '==', tipoAtendenteSelecionado)
+          .orderBy('timestamp', 'asc')
+          .onSnapshot((snapshot) => {
+            fila = [];
+            snapshot.forEach((doc) => {
+              fila.push(doc.data().senhaId);
+            });
+            atualizarFila();
+          }, (error) => {
+            console.error("Erro ao escutar a fila: ", error);
+            alert("Erro ao carregar a fila. Verifique sua conexão ou as regras do Firestore.");
+          });
+    }
+
+    // NOVA FUNÇÃO: Volta da lista de atendentes para seleção de setor
+    function voltarParaSelecaoSetor(){
+        esconderTodasTelas();
+        document.getElementById('tela-escolha-setor-atendente').classList.remove('hidden');
+    }
+
+    function mostrarTelaCadastroAtendente() {
+        esconderTodasTelas();
+        document.getElementById('tela-cadastro-atendente').classList.remove('hidden');
+        document.getElementById('nome-cadastro-atendente').value = ''; 
+        document.querySelectorAll('#tela-cadastro-atendente input[name="tipoSenha"]').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+    }
+
+    function voltarParaTelaInicial() {
+        esconderTodasTelas();
+        document.getElementById('seletor-modo').classList.remove('hidden');
+    }
+
+    async function cadastrarAtendente() {
+        const nome = document.getElementById('nome-cadastro-atendente').value.trim();
+        const tiposSelecionados = Array.from(document.querySelectorAll('#tela-cadastro-atendente input[name="tipoSenha"]:checked')).map(cb => cb.value);
+
+        if (!nome) {
+            alert("Por favor, insira o nome do atendente.");
+            return;
+        }
+        if (tiposSelecionados.length === 0) {
+            alert("Por favor, selecione pelo menos um tipo de senha que o atendente pode atender.");
+            return;
+        }
+
+        try {
+            await atendentesCollection.add({
+                nome: nome,
+                tiposSenhas: tiposSelecionados,
+                dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert(`Atendente "${nome}" cadastrado com sucesso!`);
+            voltarParaTelaInicial(); 
+        } catch (error) {
+            console.error("Erro ao cadastrar atendente: ", error);
+            alert("Erro ao cadastrar atendente. Tente novamente.");
+        }
+    }
+
+    async function gerarSenha(){
+      const l = document.getElementById('letra-cliente').value;
+      
+      try {
+        const docRef = contadorCollection.doc(l);
+        await db.runTransaction(async (transaction) => {
+          const doc = await transaction.get(docRef);
+          let currentCount = 0;
+          if (doc.exists) {
+            currentCount = doc.data().valor;
+          }
+          const newCount = currentCount + 1;
+          transaction.set(docRef, { valor: newCount });
+
+          const s = l + String(newCount).padStart(3,'0');
+          
+          await senhasCollection.add({
+            senhaId: s,
+            tipo: l,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          document.getElementById('senha-gerada').textContent = `Sua senha: ${s}`;
+        });
+      } catch (error) {
+        console.error("Erro ao gerar senha: ", error);
+        alert("Erro ao gerar senha. Tente novamente ou verifique as regras do Firestore.");
+      }
+    }
+
+    async function chamarProxima(){
+      if (fila.length === 0) {
+        document.getElementById('senha-chamada').textContent = "Nada na fila";
+        return;
+      }
+      
+      const senhaParaChamar = fila[0];
+
+      try {
+        const snapshot = await senhasCollection
+          .where('senhaId', '==', senhaParaChamar)
+          .limit(1)
+          .get();
+
+        if (!snapshot.empty) {
+          await snapshot.docs[0].ref.update({
+            chamadaPor: atendenteAtivoNome, // Usa o nome do atendente logado
+            idAtendenteChamou: atendenteAtivoId, // ID do doc do atendente
+            dataChamada: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          await snapshot.docs[0].ref.delete(); 
+          document.getElementById('senha-chamada').textContent = `Chamando: ${senhaParaChamar}`;
+        } else {
+          document.getElementById('senha-chamada').textContent = "Erro: Senha não encontrada para chamada.";
+        }
+      } catch (error) {
+        console.error("Erro ao chamar próxima senha: ", error);
+        alert("Erro ao chamar próxima senha. Verifique sua conexão ou as regras do Firestore.");
+      }
+    }
+
+    function atualizarFila(){
+      if (fila.length > 0) {
+        document.getElementById('fila-espera').innerHTML = 
+          `<p><strong>Fila ${nomeSetorSelecionado}:</strong></p><ul>${fila.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+      } else {
+        document.getElementById('fila-espera').innerHTML = "<p>Nenhuma senha na fila</p>";
+      }
+    }
+
+    // Função global de "voltar" que limpa o estado e retorna à tela inicial
+    function voltar(){
+      if (unsubscribeFila) {
+          unsubscribeFila();
+          unsubscribeFila = null;
+      }
+      tipoAtendenteSelecionado = null;
+      nomeSetorSelecionado = null; 
+      atendenteAtivoId = null;
+      atendenteAtivoNome = null;
+      
+      esconderTodasTelas();
+      document.getElementById('seletor-modo').classList.remove('hidden');
+      document.getElementById('senha-gerada').textContent = "Sua senha aparecerá aqui";
+      document.getElementById('senha-chamada').textContent = "Aguardando chamada";
+      document.getElementById('fila-espera').innerHTML = "";
+    }
+
+
+    // --- Adiciona Event Listeners após o DOM ser carregado ---
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const btnCadastroAtendente = document.getElementById('btn-cadastro-atendente');
+        if (btnCadastroAtendente) {
+            btnCadastroAtendente.addEventListener('click', mostrarTelaCadastroAtendente);
+        }
+    });
+
+  </script>
+</body>
+</html>
