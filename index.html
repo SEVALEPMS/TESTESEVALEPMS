@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Senhas · Santos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cor-primaria-santos: #004d99; /* Azul escuro da prefeitura */
+            --cor-secundaria-santos: #007bff; /* Azul um pouco mais claro */
+            --cor-verde-sucesso: #28a745; /* Verde para sucesso, similar ao do site */
+            --cor-vermelho-erro: #dc3545; /* Vermelho para erro */
+            --cor-cinza-claro: #f8f9fa;
+            --cor-cinza-medio: #dee2e6;
+            --cor-texto: #343a40;
+            --cor-branco: #ffffff;
+        }
+
+        /* Ajustes para ocupar a tela toda */
+        html, body {
+            height: 100%; /* Garante que body ocupe 100% da altura da viewport */
+            margin: 0;
+            padding: 0;
+            font-family: 'Roboto', sans-serif;
+            background: var(--cor-cinza-claro);
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Alinha o container ao centro verticalmente */
+            overflow: hidden; /* Evita scroll na tela principal por padrão */
+        }
+
+        .container {
+            background: var(--cor-branco);
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 580px;
+            text-align: center;
+            padding: 30px;
+            box-sizing: border-box;
+            
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: auto; 
+        }
+
+        /* Estilo específico para a tela de Painel de Chamada em modo fullscreen */
+        body.fullscreen-panel {
+            align-items: flex-start; /* Alinha o conteúdo ao topo da tela */
+            padding: 0; /* Remove padding */
+            overflow: hidden; /* Evita scroll na tela principal */
+        }
+
+        body.fullscreen-panel .container {
+            max-width: 100vw;
+            width: 100vw;
+            height: 100vh; /* Ocupa 100% da altura da viewport */
+            border-radius: 0;
+            box-shadow: none;
+            padding: 0; /* Remove padding do container em modo fullscreen */
+            
+            /* **NOVO/ALTERADO:** Define o container como flex column para gerenciar o layout interno do painel de chamada */
+            display: flex; 
+            flex-direction: column;
+            overflow-y: auto; /* Permite scroll no container se o conteúdo total do painel de chamada for muito alto */
+        }
+
+        header {
+            background: var(--cor-primaria-santos);
+            color: var(--cor-branco);
+            padding: 15px 0;
+            margin: 0; /* Remove margens que causavam espaçamento */
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+        
+        body.fullscreen-panel header {
+            border-radius: 0; /* Remove bordas arredondadas para fullscreen */
+            padding: 20px 0; /* Aumenta um pouco o padding do header em fullscreen */
+            flex-shrink: 0; /* Impede que o header encolha */
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        h2 {
+            color: var(--cor-primaria-santos);
+            margin-bottom: 25px;
+            font-weight: 600;
+            font-size: 1.8em;
+        }
+
+        p {
+            color: var(--cor-texto);
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        button, select, input[type="text"] {
+            font-size: 1.1em;
+            padding: 12px 24px;
+            margin: 10px 4px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button.primary {
+            background-color: var(--cor-primaria-santos);
+            color: var(--cor-branco);
+        }
+
+        button.primary:hover {
+            background-color: #003b7a; /* Tom mais escuro do azul primário */
+        }
+
+        button.secondary {
+            background-color: var(--cor-cinza-medio);
+            color: var(--cor-texto);
+        }
+
+        button.secondary:hover {
+            background-color: #c9d2da;
+        }
+
+        button.danger {
+            background-color: var(--cor-vermelho-erro);
+            color: var(--cor-branco);
+        }
+
+        button.danger:hover {
+            background-color: #b02a37;
+        }
+
+        select, input[type="text"] {
+            background-color: var(--cor-branco);
+            border: 1px solid var(--cor-cinza-medio);
+            padding: 10px;
+            border-radius: 5px;
+            width: calc(100% - 24px); /* Ajusta para padding e margem */
+            margin-bottom: 20px;
+        }
+
+        .painel {
+            display: none; /* Esconde todos os painéis por padrão */
+            padding: 20px 0;
+        }
+
+        #senha-gerada {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--cor-verde-sucesso);
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px dashed var(--cor-verde-sucesso);
+            border-radius: 5px;
+        }
+
+        #senha-chamada {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--cor-secundaria-santos);
+            margin: 20px 0;
+            padding: 15px;
+            background-color: var(--cor-cinza-claro);
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        #fila-espera ul {
+            list-style: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--cor-cinza-medio);
+            border-radius: 5px;
+            margin: 15px 0;
+            background-color: var(--cor-branco);
+        }
+
+        #fila-espera li {
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--cor-cinza-claro);
+            font-size: 1.1em;
+            color: var(--cor-texto);
+            text-align: left;
+        }
+        #fila-espera li:last-child { border-bottom: none; }
+
+        .checkbox-group label {
+            display: block;
+            margin-bottom: 10px;
+            text-align: left;
+            color: var(--cor-texto);
+            font-size: 1em;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #lista-atendentes-cadastrados {
+            margin-top: 20px;
+            border-top: 1px solid var(--cor-cinza-medio);
+            padding-top: 15px;
+        }
+
+        .atendente-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--cor-cinza-claro);
+        }
+
+        .atendente-item:last-child {
+            border-bottom: none;
+        }
+
+        .atendente-item span {
+            font-weight: 500;
+            color: var(--cor-texto);
+        }
+
+        /* --- Estilos para o novo Painel de Chamada --- */
+        #tela-painel-chamada {
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            /* height: 100%; <- Removido, será gerenciado pelo container pai */
+            padding: 20px; /* Padding interno para o painel */
+            box-sizing: border-box;
+            /* overflow-y: auto; <- Removido, será gerenciado pelo container pai */
+
+            flex-basis: 0; /* Permite que este item encolha a 0 */
+            flex-grow: 1; /* Permite que este item cresça e ocupe o espaço disponível */
+        }
+        
+        #tela-painel-chamada h2 {
+            margin-top: 0; 
+            text-align: center;
+            flex-shrink: 0; /* Impede que o título encolha */
+        }
+
+        #ultima-senha-geral-container {
+            background: var(--cor-primaria-santos);
+            color: var(--cor-branco);
+            padding: 20px 15px; 
+            border-radius: 8px;
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            flex-shrink: 0; /* Impede que ele encolha */
+            text-align: center;
+        }
+
+        #ultima-senha-geral-container p {
+            font-size: 1.3em; 
+            margin-bottom: 8px;
+            color: var(--cor-branco);
+            text-align: center;
+        }
+
+        #ultima-senha-geral {
+            font-size: 5.5em; /* Ajustado um pouco para caber melhor */
+            font-weight: 700;
+            text-align: center;
+            color: var(--cor-branco);
+            margin: 0;
+            line-height: 1;
+            /* Garante que o texto não quebre */
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis; 
+        }
+
+        #ultimas-senhas-por-setor {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px; 
+            margin-top: 15px;
+            flex-grow: 1; /* Permite que esta seção ocupe o espaço restante */
+            align-items: flex-start; /* Alinha os cartões ao topo do espaço disponível */
+            /* overflow-y: auto; <- Removido, pois o container pai já lida com o scroll */
+            padding-bottom: 10px; 
+        }
+
+        .cartao-setor {
+            background: var(--cor-cinza-claro);
+            border: 1px solid var(--cor-cinza-medio);
+            border-radius: 8px;
+            padding: 15px;
+            flex: 1 1 30%; /* flex-grow, flex-shrink, flex-basis */
+            min-width: 280px; /* Aumentei um pouco o min-width para evitar quebras muito cedo */
+            max-width: calc(33.33% - 10px); /* Ajuste para garantir 3 colunas com gap */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            height: auto; 
+            box-sizing: border-box; 
+        }
+
+        .cartao-setor h3 {
+            color: var(--cor-primaria-santos);
+            font-size: 1.4em; 
+            margin-top: 0;
+            margin-bottom: 10px; 
+            font-weight: 600;
+        }
+
+        .cartao-setor .lista-senhas-setor {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            height: auto; 
+            overflow-y: visible; 
+            display: flex;
+            flex-direction: column-reverse; /* Exibe do mais novo para o mais antigo */
+            justify-content: flex-start; 
+            align-items: center;
+            flex-grow: 1; 
+            min-height: 120px; /* Mantém uma altura mínima para 5 itens */
+        }
+
+        .cartao-setor .lista-senhas-setor li {
+            font-size: 2em; /* Reduzi um pouco mais para caber 5 itens */
+            font-weight: 600;
+            color: var(--cor-secundaria-santos);
+            margin-bottom: 5px; 
+            width: 100%;
+            text-align: center;
+            white-space: nowrap; /* Impede que a senha quebre */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cartao-setor .lista-senhas-setor li:first-child { /* A primeira na lista visualmente (a última chamada) */
+            margin-top: auto; /* Empurra os itens para baixo, para que o primeiro item visualmente fique no topo */
+        }
+        .cartao-setor .lista-senhas-setor li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .cartao-setor .lista-senhas-setor li.chamada-destaque {
+            color: var(--cor-verde-sucesso);
+            font-size: 2.5em; /* Ajusta para o destaque */
+            font-weight: 700;
+        }
+
+        /* Ajustes para o botão "Voltar" no Painel de Chamada */
+        #tela-painel-chamada .secondary {
+            margin-top: auto; /* **NOVO:** Empurra o botão para o fundo do flex container */
+            align-self: center; /* Centraliza o botão */
+            flex-shrink: 0; /* Impede que o botão encolha */
+            margin-bottom: 10px; /* Adiciona um pequeno espaçamento inferior */
+        }
+
+
+        /* Media queries para responsividade */
+        @media (max-width: 992px) { 
+            #ultima-senha-geral {
+                font-size: 4.5em;
+            }
+            .cartao-setor {
+                min-width: 300px; /* Ajuste para telas um pouco menores */
+                max-width: calc(50% - 10px); /* 2 colunas */
+            }
+            .cartao-setor .lista-senhas-setor li {
+                font-size: 1.8em;
+            }
+            .cartao-setor .lista-senhas-setor li.chamada-destaque {
+                font-size: 2.2em;
+            }
+            #tela-painel-chamada h2 {
+                font-size: 1.6em;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #ultima-senha-geral {
+                font-size: 3.5em;
+            }
+            .cartao-setor {
+                min-width: 280px; /* Ajuste para telas menores */
+                max-width: 100%; /* 1 coluna em telas médias */
+            }
+            .cartao-setor .lista-senhas-setor li {
+                font-size: 1.5em;
+            }
+            .cartao-setor .lista-senhas-setor li.chamada-destaque {
+                font-size: 1.8em;
+            }
+            body.fullscreen-panel header h1 {
+                font-size: 1.6em;
+            }
+            #tela-painel-chamada h2 {
+                font-size: 1.4em;
+            }
+            #ultima-senha-geral-container p {
+                font-size: 1.1em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #ultima-senha-geral {
+                font-size: 3em;
+            }
+            .cartao-setor h3 {
+                font-size: 1.2em;
+            }
+            .cartao-setor .lista-senhas-setor li {
+                font-size: 1.2em;
+            }
+            .cartao-setor .lista-senhas-setor li.chamada-destaque {
+                font-size: 1.5em;
+            }
+            #tela-painel-chamada {
+                padding: 10px; 
+            }
+            #ultima-senha-geral-container {
+                padding: 15px 10px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Prefeitura de Santos</h1>
+        </header>
+        <h2>Sistema de Senhas</h2>
+
+        <div id="seletor-modo">
+            <p>Escolha o modo de acesso:</p>
+            <button class="primary" onclick="entrarComo('cliente')">Cliente</button>
+            <button class="primary" onclick="mostrarTelaEscolhaAtendente()">Atendente</button>
+            <button class="primary" id="btn-cadastro-atendente">Cadastrar Atendente</button>
+            <button class="secondary" onclick="mostrarTelaPainelChamada()">Painel de Chamada</button>
+        </div>
+
+        <div id="tela-cliente" class="painel">
+            <h2>Gerar Senha</h2>
+            <select id="letra-cliente">
+                <option value="A">SEVALE</option>
+                <option value="B">SIAM</option>
+                <option value="C">SECONV</option>
+            </select><br>
+            <button class="primary" onclick="gerarSenha()">Gerar Senha</button>
+            <div id="senha-gerada">Sua senha aparecerá aqui</div>
+            <button class="secondary" onclick="voltar()">← Voltar</button>
+        </div>
+
+        <div id="tela-escolha-setor-atendente" class="painel">
+            <h2>Selecione o Setor de Atendimento</h2>
+            <button class="primary" onclick="mostrarListaAtendentes('A', 'SEVALE')">SEVALE</button>
+            <button class="primary" onclick="mostrarListaAtendentes('B', 'SIAM')">SIAM</button>
+            <button class="primary" onclick="mostrarListaAtendentes('C', 'SECONV')">SECONV</button><br>
+            <button class="secondary" onclick="voltar()">← Voltar</button>
+        </div>
+
+        <div id="tela-lista-atendentes-setor" class="painel">
+            <h2 id="titulo-lista-atendentes"></h2>
+            <div id="lista-atendentes-container"></div>
+            <button class="secondary" onclick="voltarParaSelecaoSetor()">← Voltar</button>
+        </div>
+
+        <div id="tela-atendente" class="painel">
+            <h2 id="titulo-atendente">Atendente</h2>
+            <button class="primary" onclick="chamarProxima()">Chamar Próxima</button>
+            <button class="secondary" id="btn-chamar-novamente" style="display:none;">Chamar Novamente</button>
+            <div id="senha-chamada">Aguardando chamada</div>
+            <div id="fila-espera"></div>
+            <button class="secondary" onclick="voltar()">← Voltar</button>
+        </div>
+
+        <div id="tela-cadastro-atendente" class="painel">
+            <h2>Cadastrar Novo Atendente</h2>
+            <p>Nome do Atendente:</p>
+            <input type="text" id="nome-cadastro-atendente" placeholder="Nome Completo">
+            
+            <div class="checkbox-group">
+                <p>Tipos de Senha que o atendente pode atender:</p>
+                <label><input type="checkbox" name="tipoSenha" value="A"> SEVALE (Senha A)</label>
+                <label><input type="checkbox" name="tipoSenha" value="B"> SIAM (Senha B)</label>
+                <label><input type="checkbox" name="tipoSenha" value="C"> SECONV (Senha C)</label>
+            </div>
+            
+            <button class="primary" onclick="cadastrarAtendente()">Cadastrar</button>
+            <button class="primary" onclick="mostrarAtendentesCadastrados()">Ver Atendentes</button><br>
+            <button class="secondary" onclick="voltarParaTelaInicial()">← Voltar</button>
+
+            <div id="lista-atendentes-cadastrados" class="hidden">
+                <h3>Atendentes Cadastrados</h3>
+                <div id="container-dos-atendentes"></div>
+            </div>
+        </div>
+
+        <div id="tela-painel-chamada">
+            <h2>Painel de Chamada</h2>
+            
+            <div id="ultima-senha-geral-container">
+                <p>ÚLTIMA SENHA CHAMADA:</p>
+                <div id="ultima-senha-geral">--</div>
+            </div>
+
+            <h3>Últimas por Setor</h3>
+            <div id="ultimas-senhas-por-setor">
+                <div class="cartao-setor">
+                    <h3>SEVALE (A)</h3>
+                    <ul id="lista-senhas-A" class="lista-senhas-setor"></ul>
+                </div>
+                <div class="cartao-setor">
+                    <h3>SIAM (B)</h3>
+                    <ul id="lista-senhas-B" class="lista-senhas-setor"></ul>
+                </div>
+                <div class="cartao-setor">
+                    <h3>SECONV (C)</h3>
+                    <ul id="lista-senhas-C" class="lista-senhas-setor"></ul>
+                </div>
+            </div>
+            <button class="secondary" onclick="voltar()">← Voltar</button>
+        </div>
+
+        <audio id="som-chamada" src="beep.mp3" preload="auto"></audio>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyCb5WQz-R4TLlaPtag0-T4WVgoOG3AxBDE",
+            authDomain: "senhas-1fd17.firebaseapp.com",
+            databaseURL: "https://senhas-1fd17-default-rtdb.firebaseio.com",
+            projectId: "senhas-1fd17",
+            storageBucket: "senhas-1fd17.appspot.com",
+            messagingSenderId: "403214666788",
+            appId: "1:403214666788:web:352e04b7bf9252a19a9cb1",
+            measurementId: "G-69CK7CV4X6"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Referências às coleções
+        const senhasCollection = db.collection('senhas');
+        const contadorCollection = db.collection('contadores');
+        const atendentesCollection = db.collection('atendentes'); 
+        const ultimasChamadasCollection = db.collection('ultimasSenhasChamadas'); // Coleção para as últimas chamadas
+
+        // Variáveis de estado
+        let fila = [];
+        let tipoAtendenteSelecionado = null; 
+        let nomeSetorSelecionado = null;
+        let atendenteAtivoId = null;
+        let atendenteAtivoNome = null;
+        let unsubscribeFila = null; 
+        let unsubscribeUltimaGeral = null;
+        let unsubscribeUltimasPorSetor = {}; 
+
+        let ultimaSenhaChamada = null; // Armazena a última senha que foi chamada
+
+        // --- Funções de UI ---
+
+        function esconderTodasTelas() {
+            // Remove a classe fullscreen-panel do body ao esconder todas as telas
+            document.body.classList.remove('fullscreen-panel');
+            
+            ['tela-cliente', 'tela-escolha-setor-atendente', 'tela-lista-atendentes-setor', 
+             'tela-atendente', 'tela-cadastro-atendente', 'seletor-modo', 'tela-painel-chamada'].forEach(id => {
+                document.getElementById(id).style.display = 'none'; 
+                // Garante que o painel de chamada não tenha a classe 'painel' por padrão
+                // Essa classe deve ser adicionada dinamicamente
+                document.getElementById(id).classList.remove('painel'); 
+            });
+        }
+
+        function entrarComo(modo){
+            esconderTodasTelas();
+            document.getElementById('tela-cliente').classList.add('painel');
+            document.getElementById('tela-cliente').style.display = 'block';
+        }
+
+        function mostrarTelaEscolhaAtendente(){
+            esconderTodasTelas();
+            document.getElementById('tela-escolha-setor-atendente').classList.add('painel');
+            document.getElementById('tela-escolha-setor-atendente').style.display = 'block';
+        }
+        
+        function voltarParaSelecaoSetor(){
+            esconderTodasTelas();
+            document.getElementById('tela-escolha-setor-atendente').classList.add('painel');
+            document.getElementById('tela-escolha-setor-atendente').style.display = 'block';
+        }
+
+        function mostrarTelaCadastroAtendente() {
+            esconderTodasTelas();
+            document.getElementById('tela-cadastro-atendente').classList.add('painel');
+            document.getElementById('tela-cadastro-atendente').style.display = 'block';
+            document.getElementById('lista-atendentes-cadastrados').classList.add('hidden');
+            document.getElementById('nome-cadastro-atendente').value = ''; 
+            document.querySelectorAll('#tela-cadastro-atendente input[name="tipoSenha"]').forEach(checkbox => checkbox.checked = false);
+        }
+
+        function mostrarTelaPainelChamada() {
+            esconderTodasTelas();
+            document.getElementById('tela-painel-chamada').style.display = 'flex'; // Usar flex para layout de coluna
+            document.body.classList.add('fullscreen-panel'); // Adiciona classe para tela cheia
+            iniciarListenersPainelChamada();
+        }
+
+        function voltarParaTelaInicial() {
+            esconderTodasTelas();
+            document.getElementById('seletor-modo').classList.add('painel'); // Adiciona a classe painel
+            document.getElementById('seletor-modo').style.display = 'block';
+            pararListenersPainelChamada(); 
+        }
+
+        function voltar(){
+            if (unsubscribeFila) {
+                unsubscribeFila();
+                unsubscribeFila = null;
+            }
+            tipoAtendenteSelecionado = null;
+            nomeSetorSelecionado = null; 
+            atendenteAtivoId = null;
+            atendenteAtivoNome = null;
+            
+            // Limpa o estado da senha chamada e oculta o botão de chamar novamente
+            ultimaSenhaChamada = null;
+            document.getElementById('btn-chamar-novamente').style.display = 'none';
+
+            voltarParaTelaInicial(); 
+            
+            document.getElementById('senha-gerada').textContent = "Sua senha aparecerá aqui";
+            document.getElementById('senha-chamada').textContent = "Aguardando chamada";
+            document.getElementById('fila-espera').innerHTML = "";
+        }
+        
+        // --- Lógica do Cadastro e Listagem de Atendentes ---
+
+        async function cadastrarAtendente() {
+            const nome = document.getElementById('nome-cadastro-atendente').value.trim();
+            const tiposSelecionados = Array.from(document.querySelectorAll('#tela-cadastro-atendente input[name="tipoSenha"]:checked')).map(cb => cb.value);
+
+            if (!nome) return alert("Por favor, insira o nome do atendente.");
+            if (tiposSelecionados.length === 0) return alert("Selecione pelo menos um tipo de senha.");
+
+            try {
+                await atendentesCollection.add({
+                    nome: nome,
+                    tiposSenhas: tiposSelecionados,
+                    dataCadastro: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert(`Atendente "${nome}" cadastrado com sucesso!`);
+                voltarParaTelaInicial(); 
+            } catch (error) {
+                console.error("Erro ao cadastrar atendente: ", error);
+                alert("Erro ao cadastrar atendente.");
+            }
+        }
+
+        async function mostrarAtendentesCadastrados() {
+            const listaDiv = document.getElementById('lista-atendentes-cadastrados');
+            const container = document.getElementById('container-dos-atendentes');
+
+            if (!listaDiv.classList.contains('hidden')) {
+                listaDiv.classList.add('hidden');
+                return;
+            }
+
+            listaDiv.classList.remove('hidden');
+            container.innerHTML = '<p>Carregando...</p>';
+
+            try {
+                const snapshot = await atendentesCollection.where('tiposSenhas', 'array-contains', tipoAtendenteSelecionado).orderBy('nome', 'asc').get();
+                container.innerHTML = '';
+                if (snapshot.empty) {
+                    container.innerHTML = '<p>Nenhum atendente cadastrado.</p>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const atendente = doc.data();
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'atendente-item';
+                    itemDiv.innerHTML = `<span>${atendente.nome}</span> <button class="danger" onclick="excluirAtendente('${doc.id}', '${atendente.nome}')">Excluir</button>`;
+                    container.appendChild(itemDiv);
+                });
+            } catch (error) {
+                console.error("Erro ao buscar atendentes: ", error);
+                container.innerHTML = '<p style="color: red;">Erro ao carregar a lista.</p>';
+            }
+        }
+
+        async function excluirAtendente(id, nome) {
+            if (!confirm(`Tem certeza que deseja excluir o atendente "${nome}"?`)) return;
+
+            try {
+                await atendentesCollection.doc(id).delete();
+                alert(`Atendente "${nome}" excluído com sucesso!`);
+                const listaDiv = document.getElementById('lista-atendentes-cadastrados');
+                if (!listaDiv.classList.contains('hidden')) {
+                    mostrarAtendentesCadastrados(); 
+                    mostrarAtendentesCadastrados(); 
+                }
+            } catch (error) {
+                console.error("Erro ao excluir atendente: ", error);
+                alert(`Erro ao excluir o atendente "${nome}".`);
+            }
+        }
+
+        // --- Lógica do Atendimento ---
+
+        async function mostrarListaAtendentes(tipo, nomeSetor){
+            tipoAtendenteSelecionado = tipo;
+            nomeSetorSelecionado = nomeSetor;
+            esconderTodasTelas();
+            document.getElementById('tela-lista-atendentes-setor').classList.add('painel');
+            document.getElementById('tela-lista-atendentes-setor').style.display = 'block';
+            document.getElementById('titulo-lista-atendentes').textContent = `Atendentes do Setor ${nomeSetor}`;
+            
+            const listaContainer = document.getElementById('lista-atendentes-container');
+            listaContainer.innerHTML = 'Carregando...';
+
+            try {
+                const snapshot = await atendentesCollection.where('tiposSenhas', 'array-contains', tipo).orderBy('nome', 'asc').get();
+                listaContainer.innerHTML = '';
+                if (snapshot.empty) {
+                    listaContainer.innerHTML = '<p>Nenhum atendente cadastrado para este setor.</p>';
+                } else {
+                    snapshot.forEach(doc => {
+                        const atendente = doc.data();
+                        const button = document.createElement('button');
+                        button.className = 'primary atendente-lista-btn';
+                        button.textContent = atendente.nome;
+                        button.onclick = () => iniciarAtendimentoComAtendente(doc.id, atendente.nome);
+                        listaContainer.appendChild(button);
+                    });
+                }
+            } catch (error) {
+                console.error("Erro ao carregar atendentes: ", error);
+            }
+        }
+
+        async function iniciarAtendimentoComAtendente(idAtendente, nomeAtendente){
+            atendenteAtivoId = idAtendente;
+            atendenteAtivoNome = nomeAtendente;
+            esconderTodasTelas();
+            document.getElementById('tela-atendente').classList.add('painel');
+            document.getElementById('tela-atendente').style.display = 'block';
+            document.getElementById('titulo-atendente').textContent = `${nomeSetorSelecionado} - ${atendenteAtivoNome}`;
+            
+            // Adiciona o listener para o botão "Chamar Novamente"
+            document.getElementById('btn-chamar-novamente').onclick = chamarNovamente;
+
+            if (unsubscribeFila) unsubscribeFila();
+            
+            unsubscribeFila = senhasCollection
+              .where('tipo', '==', tipoAtendenteSelecionado)
+              .orderBy('timestamp', 'asc')
+              .onSnapshot((snapshot) => {
+                fila = snapshot.docs.map(doc => doc.data().senhaId);
+                atualizarFila();
+              }, (error) => console.error("Erro ao escutar a fila: ", error));
+        }
+
+        async function gerarSenha(){
+            const l = document.getElementById('letra-cliente').value;
+            try {
+                const docRef = contadorCollection.doc(l);
+                await db.runTransaction(async (transaction) => {
+                    const doc = await transaction.get(docRef);
+                    const newCount = (doc.exists ? doc.data().valor : 0) + 1;
+                    transaction.set(docRef, { valor: newCount });
+                    const s = l + String(newCount).padStart(3, '0');
+                    await senhasCollection.add({
+                        senhaId: s,
+                        tipo: l,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    document.getElementById('senha-gerada').textContent = `Sua senha: ${s}`;
+                });
+            } catch (error) { console.error("Erro ao gerar senha: ", error); }
+        }
+        
+        const MAX_SENHAS_EXIBIR = 5; // Constante para o número de senhas a exibir
+
+        async function chamarProxima(){
+            if (fila.length === 0) {
+                document.getElementById('senha-chamada').textContent = "Nada na fila";
+                ultimaSenhaChamada = null; // Limpa a senha chamada
+                document.getElementById('btn-chamar-novamente').style.display = 'none'; // Oculta o botão
+                return;
+            }
+            const senhaParaChamar = fila[0];
+            const tipoSenhaChamada = senhaParaChamar.charAt(0);
+
+            try {
+                const snapshot = await senhasCollection.where('senhaId', '==', senhaParaChamar).limit(1).get();
+                if (!snapshot.empty) {
+                    await snapshot.docs[0].ref.delete();
+                    document.getElementById('senha-chamada').textContent = `Chamando: ${senhaParaChamar}`;
+                    ultimaSenhaChamada = senhaParaChamar; // Armazena a senha chamada
+                    document.getElementById('btn-chamar-novamente').style.display = 'inline-block'; // Mostra o botão
+
+                    // Obter o timestamp atual NO CLIENTE antes de adicionar ao array
+                    const currentTimestamp = firebase.firestore.Timestamp.now(); 
+
+                    // Atualiza as últimas senhas chamadas (geral)
+                    const geralDocRef = ultimasChamadasCollection.doc('geral');
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(geralDocRef);
+                        let ultimasSenhas = doc.exists && doc.data().senhas ? doc.data().senhas : [];
+                        
+                        // Adiciona a nova senha no início com o timestamp já definido
+                        ultimasSenhas.unshift({ id: senhaParaChamar, timestamp: currentTimestamp });
+                        if (ultimasSenhas.length > MAX_SENHAS_EXIBIR) {
+                            ultimasSenhas = ultimasSenhas.slice(0, MAX_SENHAS_EXIBIR);
+                        }
+                        transaction.set(geralDocRef, { senhas: ultimasSenhas });
+                    });
+
+                    // Atualiza as últimas senhas chamadas (por setor)
+                    const setorDocRef = ultimasChamadasCollection.doc(tipoSenhaChamada);
+                    await db.runTransaction(async (transaction) => {
+                        const doc = await transaction.get(setorDocRef);
+                        let ultimasSenhasSetor = doc.exists && doc.data().senhas ? doc.data().senhas : [];
+                        
+                        // Adiciona a nova senha no início com o timestamp já definido
+                        ultimasSenhasSetor.unshift({ id: senhaParaChamar, timestamp: currentTimestamp });
+                        if (ultimasSenhasSetor.length > MAX_SENHAS_EXIBIR) {
+                            ultimasSenhasSetor = ultimasSenhasSetor.slice(0, MAX_SENHAS_EXIBIR);
+                        }
+                        transaction.set(setorDocRef, { senhas: ultimasSenhasSetor });
+                    });
+                }
+            } catch (error) { console.error("Erro ao chamar próxima senha: ", error); }
+        }
+
+        async function chamarNovamente() {
+            if (ultimaSenhaChamada) {
+                document.getElementById('senha-chamada').textContent = `Chamando Novamente: ${ultimaSenhaChamada}`;
+                // Ao chamar novamente, atualizamos o registro geral para disparar o som no painel
+                const geralDocRef = ultimasChamadasCollection.doc('geral');
+                const tipoSenhaChamada = ultimaSenhaChamada.charAt(0);
+                const setorDocRef = ultimasChamadasCollection.doc(tipoSenhaChamada);
+
+                try {
+                    const currentTimestamp = firebase.firestore.Timestamp.now();
+
+                    // Atualiza o timestamp da última senha chamada geral para re-disparar o listener
+                    await db.runTransaction(async (transaction) => {
+                        const docGeral = await transaction.get(geralDocRef);
+                        let ultimasSenhasGeral = docGeral.exists && docGeral.data().senhas ? docGeral.data().senhas : [];
+                        if (ultimasSenhasGeral.length > 0 && ultimasSenhasGeral[0].id === ultimaSenhaChamada) {
+                            ultimasSenhasGeral[0].timestamp = currentTimestamp; // Atualiza o timestamp
+                        } else {
+                            ultimasSenhasGeral.unshift({ id: ultimaSenhaChamada, timestamp: currentTimestamp });
+                            if (ultimasSenhasGeral.length > MAX_SENHAS_EXIBIR) {
+                                ultimasSenhasGeral = ultimasSenhasGeral.slice(0, MAX_SENHAS_EXIBIR);
+                            }
+                        }
+                        transaction.set(geralDocRef, { senhas: ultimasSenhasGeral });
+                    });
+
+                    // Opcional: Atualiza o timestamp da última senha por setor se desejar que o som toque por setor também
+                    await db.runTransaction(async (transaction) => {
+                        const docSetor = await transaction.get(setorDocRef);
+                        let ultimasSenhasSetor = docSetor.exists && docSetor.data().senhas ? docSetor.data().senhas : [];
+                        if (ultimasSenhasSetor.length > 0 && ultimasSenhasSetor[0].id === ultimaSenhaChamada) {
+                            ultimasSenhasSetor[0].timestamp = currentTimestamp; // Atualiza o timestamp
+                        } else {
+                            ultimasSenhasSetor.unshift({ id: ultimaSenhaChamada, timestamp: currentTimestamp });
+                            if (ultimasSenhasSetor.length > MAX_SENHAS_EXIBIR) {
+                                ultimasSenhasSetor = ultimasSenhasSetor.slice(0, MAX_SENHAS_EXIBIR);
+                            }
+                        }
+                        transaction.set(setorDocRef, { senhas: ultimasSenhasSetor });
+                    });
+
+                } catch (error) {
+                    console.error("Erro ao chamar a mesma senha novamente:", error);
+                }
+            } else {
+                alert("Nenhuma senha anterior para chamar novamente.");
+            }
+        }
+
+        function atualizarFila(){
+            const filaEsperaDiv = document.getElementById('fila-espera');
+            if (fila.length > 0) {
+                filaEsperaDiv.innerHTML = `<p><strong>Fila ${nomeSetorSelecionado}:</strong></p><ul>${fila.map(x => `<li>${x}</li>`).join('')}</ul>`;
+            } else {
+                filaEsperaDiv.innerHTML = "<p>Nenhuma senha na fila</p>";
+            }
+        }
+
+        // --- Funções para o Painel de Chamada ---
+
+        function iniciarListenersPainelChamada() {
+            if (!unsubscribeUltimaGeral) {
+                let primeiraChamadaGeral = true; // Para evitar que o som toque na inicialização
+                unsubscribeUltimaGeral = ultimasChamadasCollection.doc('geral').onSnapshot(doc => {
+                    const data = doc.data();
+                    const ultimasSenhas = data && data.senhas ? data.senhas : [];
+                    const ultimaSenhaAtual = document.getElementById('ultima-senha-geral').textContent;
+
+                    if (ultimasSenhas.length > 0) {
+                        const novaSenhaChamada = ultimasSenhas[0].id;
+                        // Toca o som apenas se a senha realmente mudou ou se é uma chamada repetida da mesma senha
+                        if (novaSenhaChamada !== ultimaSenhaAtual || !primeiraChamadaGeral) {
+                            tocarSomChamada();
+                        }
+                        document.getElementById('ultima-senha-geral').textContent = novaSenhaChamada;
+                    } else {
+                        document.getElementById('ultima-senha-geral').textContent = '--';
+                    }
+                    primeiraChamadaGeral = false; // Desativa a flag após a primeira atualização
+                }, error => console.error("Erro ao carregar última senha geral:", error));
+            }
+
+            ['A', 'B', 'C'].forEach(tipo => {
+                if (!unsubscribeUltimasPorSetor[tipo]) {
+                    unsubscribeUltimasPorSetor[tipo] = ultimasChamadasCollection.doc(tipo).onSnapshot(doc => {
+                        const data = doc.data();
+                        const ultimasSenhas = data && data.senhas ? data.senhas : [];
+                        const ulElement = document.getElementById(`lista-senhas-${tipo}`);
+                        ulElement.innerHTML = ''; 
+
+                        if (ultimasSenhas.length === 0) {
+                            ulElement.innerHTML = '<li style="font-size: 1.5em; opacity: 0.7;">--</li>'; 
+                        } else {
+                            // Renderiza as senhas, da mais nova para a mais antiga
+                            ultimasSenhas.forEach((item, index) => {
+                                const li = document.createElement('li');
+                                li.textContent = item.id;
+                                if (index === 0) { 
+                                    li.classList.add('chamada-destaque');
+                                }
+                                ulElement.appendChild(li);
+                            });
+                        }
+                    }, error => console.error(`Erro ao carregar últimas senhas do setor ${tipo}:`, error));
+                }
+            });
+        }
+
+        function pararListenersPainelChamada() {
+            if (unsubscribeUltimaGeral) {
+                unsubscribeUltimaGeral();
+                unsubscribeUltimaGeral = null;
+            }
+            ['A', 'B', 'C'].forEach(tipo => {
+                if (unsubscribeUltimasPorSetor[tipo]) {
+                    unsubscribeUltimasPorSetor[tipo]();
+                    unsubscribeUltimasPorSetor[tipo] = null;
+                }
+            });
+        }
+
+        // --- Função para tocar o som ---
+        function tocarSomChamada() {
+            const audio = document.getElementById('som-chamada');
+            if (audio) {
+                audio.play().catch(e => console.error("Erro ao tocar o som:", e));
+                audio.currentTime = 0; 
+            }
+        }
+
+        // --- INICIALIZAÇÃO DA PÁGINA ---
+        document.addEventListener('DOMContentLoaded', () => {
+            voltarParaTelaInicial(); // Garante que apenas o seletor de modo seja exibido ao carregar
+            document.getElementById('btn-cadastro-atendente').addEventListener('click', mostrarTelaCadastroAtendente);
+        });
+    </script>
+</body>
+</html>
