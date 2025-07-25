@@ -438,8 +438,8 @@
        
         <div id="seletor-modo">
             <p>Escolha o modo de acesso:</p>
-            <button class="primary" onclick="entrarComo('cliente')">Cliente</button>
-            <button class="primary" onclick="mostrarTelaEscolhaAtendente()">Atendente</button>
+            <button class="primary" onclick="entrarComo('cliente')">Gerar Senha</button>
+            <button class="primary" onclick="mostrarTelaEscolhaAtendente()">Atendimento</button>
             <button class="primary" id="btn-cadastro-atendente">Cadastrar Atendente</button>
             <button class="secondary" onclick="mostrarTelaPainelChamada()">Painel de Chamada</button>
         </div>
@@ -452,7 +452,7 @@
                 <option value="C">SECONV</option>
             </select><br>
             <button class="primary" onclick="gerarSenha()">Gerar Senha</button>
-            <div id="senha-gerada">Sua senha aparecerá aqui</div>
+            <div id="senha-gerada">-</div>
             <button class="secondary" onclick="voltar()">← Voltar</button>
         </div>
 
@@ -502,9 +502,7 @@
         </div>
 
         <div id="tela-painel-chamada">
-            <h2>Painel de Chamada</h2>
-            
-            <div id="ultima-senha-geral-container">
+                <div id="ultima-senha-geral-container">
                 <p>ÚLTIMA SENHA CHAMADA:</p>
                 <div id="ultima-senha-geral">--</div>
             </div>
